@@ -1,34 +1,52 @@
-import time 
-
-st.title("Streamlit 超入門")
-st.write("プログレスバーの表示")
-
-"start!!!"
-
-latest_iteration = st.empty()
-bar = st.progress(0)
-
-for i in range(100):
-    latest_iteration.text(f"Iteration {i+1}")
-    bar.progress(i + 1)
-    time.sleep(0.1)
-
-"Done!!!"
-
-left_column, right_column = st.columns(2)
-button = left_column.button("右カラムに文字を表示")
-if button:
-    right_column.write("ここは右カラム")
-
-expander1 = st.expander("問い合わせ")
-expander1.write("問い合わせ回答１")
-expander2 = st.expander("問い合わせ")
-expander2.write("問い合わせ回答２")
-expander3 = st.expander("問い合わせ")
-expander3.write("問い合わせ回答３")
-expander4 = st.expander("問い合わせ")
-expander4.write("問い合わせ回答４")
+import pandas as pd 
+import matplotlib.pyplot as plt
+import yfinance as yf
+import altair as alt
 
 
+def get_data(days,tickers):
+    df = pd.DataFrame()
+    for company in tickers.keys():
+        print(company)
+        tkr = yf.Ticker(tickers[company])
+        hist = tkr.history(period=f"{days}")
+        hist.index = hist.index.strftime("%d %B %Y")
+        hist = hist[["Close"]]
+        hist.columns = [company]
+        hist = hist.T
+        hist.index.name = "Name"
+        hist.head()
+        hist = hist.T
+        hist.index.name = "Name"
+        df = pd.concat([df,hist])
+    return df
+
+days = 20
+tickers = {
+    "apple":"AAPL",
+    "facebook":"FB",
+    "google":"GOOGL",
+    "microsoft":"msft",
+    "netflix":"NFLX",
+    "amazon":"AMZN"
+}
+
+df = get_data(days,tickers)
+
+companies = ["apple","facebook"]
+data = df.ilock[companies]
+data.sort_index()
+data = data.T.reset_index()
+data.head()
+
+data = pd.melt(data,id_vars=["Date"]).rename(columns={"value":"Stock Prices(USD)"})
+data
 
 
+ymin,ymax = 250,300 
+chart = (
+    alt.Chart(data).mark_line(opacity=0.8,clip=True).encode(x = "Date:T",y = alt.Y("Stock Prices(USD):Q",stock=None,scale=alt.Scale(domain=[ymin,ymax])),color="Name:N"
+    )
+)
+
+chart
